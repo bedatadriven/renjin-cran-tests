@@ -1,16 +1,9 @@
 package org.renjin.cran;
 
-import java.util.Collections;
-import java.util.List;
-
 import org.renjin.cran.PackageDescription.PackageDependency;
 
-import com.google.common.base.Function;
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
 
-import edu.uci.ics.jung.algorithms.scoring.PageRank;
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseGraph;
 
@@ -31,20 +24,20 @@ public class GraphAnalyzer extends CranVisitor {
 	
 	@Override
 	public void visitComplete() {
-		final PageRank<PackageNode, Edge> scorer = new PageRank<GraphAnalyzer.PackageNode, GraphAnalyzer.Edge>(graph, 0.15);
-		scorer.evaluate();
-		List<PackageNode> packages = Lists.newArrayList(graph.getVertices());
-		Collections.sort(packages, Ordering.natural().reverse().onResultOf(new Function<PackageNode, Double>() {
-
-			@Override
-			public Double apply(PackageNode input) {
-				return scorer.getVertexScore(input);
-			}
-		}));	
-		
-		for(PackageNode p : packages) {
-			System.out.println(p.name + " = " + scorer.getVertexScore(p));
-		}
+//		final PageRank<PackageNode, Edge> scorer = new PageRank<GraphAnalyzer.PackageNode, GraphAnalyzer.Edge>(graph, 0.15);
+//		scorer.evaluate();
+//		List<PackageNode> packages = Lists.newArrayList(graph.getVertices());
+//		Collections.sort(packages, Ordering.natural().reverse().onResultOf(new Function<PackageNode, Double>() {
+//
+//			@Override
+//			public Double apply(PackageNode input) {
+//				return scorer.getVertexScore(input);
+//			}
+//		}));	
+//		
+//		for(PackageNode p : packages) {
+//			System.out.println(p.name + " = " + scorer.getVertexScore(p));
+//		}
 	}
 
 
