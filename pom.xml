@@ -21,7 +21,7 @@
   <artifactId>renjin-cran-tests</artifactId>
   <version>1.0-SNAPSHOT</version>
   <name>CRAN Tools</name>
-  
+
   <properties>
     <renjin.version>0.7.0-SNAPSHOT</renjin.version>
   </properties>
@@ -41,6 +41,11 @@
       <groupId>net.sf.jtidy</groupId>
       <artifactId>jtidy</artifactId>
       <version>r938</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jsr166-mirror</groupId>
+      <artifactId>jsr166y</artifactId>
+      <version>1.7.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -71,6 +76,7 @@
         <configuration>
           <mainClass>org.renjin.cran.Builder</mainClass>
           <arguments>
+            <argument>${project.basedir}/packages</argument>
             <argument>${project.build.directory}/reactor</argument>
           </arguments>
         </configuration>

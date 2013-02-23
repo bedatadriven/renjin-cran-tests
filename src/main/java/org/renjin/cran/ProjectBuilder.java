@@ -257,7 +257,7 @@ public class ProjectBuilder implements Runnable {
       mavenDep.setGroupId("org.renjin.cran");
       String version = CRAN.fetchCurrentVersion(pkgName);
       if(Strings.isNullOrEmpty(version)) {
-        throw new RuntimeException("Cannot get version for " + pkgName);
+        throw new RuntimeException("Cannot get version for " + version);
       }
       mavenDep.setVersion(version);
     }
