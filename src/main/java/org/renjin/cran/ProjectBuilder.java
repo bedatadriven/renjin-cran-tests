@@ -32,7 +32,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 
-public class ProjectBuilder {
+public class ProjectBuilder implements Runnable {
   private static final String RENJIN_VERSION = "0.7.0-SNAPSHOT";
   private String pkg;
   private String version;
@@ -43,26 +43,41 @@ public class ProjectBuilder {
   private Properties datasets = new Properties();
   
   private Set<String> corePackages = Sets.newHashSet("stats", "stats4", "graphics", "grDevices", "utils", "methods", "datasets", "splines");
+  private File outputDir;
 
-  public ProjectBuilder(String pkgName, String version, File outputDir) throws IOException {
+  private boolean successful = true;
+  
+  public ProjectBuilder(String pkgName, File outputDir) throws IOException {
     this.pkg = pkgName;
-    this.version = version;
-    this.baseDir = new File(outputDir, pkg + "_" + version);
-    this.rSourcesDir = new File(baseDir.getAbsolutePath() + File.separator + "src" + File.separator + "main" + File.separator + "R");
-    this.resourcesDir = new File(baseDir.getAbsolutePath() + File.separator + "src" + File.separator + "main" + File.separator + "resources" +
-          File.separator + ("org.renjin.cran." + pkgName).replace('.', File.separatorChar));
-
-    this.rTestsDir = new File(baseDir.getAbsolutePath() + File.separator + "src" + File.separator + "test" + File.separator + "R");
-
-    this.baseDir.mkdirs();
+    this.version = CRAN.fetchCurrentVersion(pkgName);
+    this.outputDir = outputDir;
+    
   }
   
-  public void build() throws IOException {
-    File sourceArchive = downloadSourceArchive();
-    unpackSources(sourceArchive);
-    writeDatasetIndex();
-    writePom(buildPom());
+  @Override
+  public void run() {
+
+    try {
+      this.baseDir = new File(outputDir, pkg + "_" + version);
+      this.rSourcesDir = new File(baseDir.getAbsolutePath() + File.separator + "src" + File.separator + "main" + File.separator + "R");
+      this.resourcesDir = new File(baseDir.getAbsolutePath() + File.separator + "src" + File.separator + "main" + File.separator + "resources" +
+            File.separator + ("org.renjin.cran." + pkg).replace('.', File.separatorChar));
+  
+      this.rTestsDir = new File(baseDir.getAbsolutePath() + File.separator + "src" + File.separator + "test" + File.separator + "R");
+  
+      this.baseDir.mkdirs();
+      
+      File sourceArchive = downloadSourceArchive();
+      unpackSources(sourceArchive);
+      writeDatasetIndex();
+      writePom(buildPom());
+    } catch(Exception e) {
+      successful = true;
+      e.printStackTrace();     
+    }
   }
+  
+  
 
   public File downloadSourceArchive() throws IOException {
 
@@ -240,7 +255,11 @@ public class ProjectBuilder {
       mavenDep.setVersion(RENJIN_VERSION);
     } else {
       mavenDep.setGroupId("org.renjin.cran");
-      mavenDep.setVersion(CRAN.fetchCurrentVersion(pkgName));
+      String version = CRAN.fetchCurrentVersion(pkgName);
+      if(Strings.isNullOrEmpty(version)) {
+        throw new RuntimeException("Cannot get version for " + pkgName);
+      }
+      mavenDep.setVersion(version);
     }
     return mavenDep;
   }
@@ -268,5 +287,13 @@ public class ProjectBuilder {
     MavenXpp3Writer writer = new MavenXpp3Writer();
     writer.write(fileWriter, pom);
     fileWriter.close();
+  }
+
+  public boolean isSuccessful() {
+    return successful;
+  }
+  
+  public String getVersion() {
+    return version;
   }
 } 

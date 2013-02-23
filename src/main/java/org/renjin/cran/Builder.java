@@ -39,13 +39,15 @@ public class Builder {
   private void run() throws IOException {
     
     List<CranPackage> list = CRAN.fetchPackageList();
-    
+   
     for(CranPackage pkg : list) {
       System.out.println(pkg.getName());
-      String version = CRAN.fetchCurrentVersion(pkg.getName());
-      ProjectBuilder projectBuilder = new ProjectBuilder(pkg.getName(), version, outputDir);
-      projectBuilder.build();
-      modules.add(pkg + "_" + version);
+      ProjectBuilder projectBuilder = new ProjectBuilder(pkg.getName(), outputDir);
+      projectBuilder.run();
+      
+      if(projectBuilder.isSuccessful()) {
+        modules.add(pkg + "_" + projectBuilder.getVersion());
+      }
     } 
     
     writePom();
