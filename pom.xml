@@ -26,6 +26,14 @@
     <renjin.version>0.7.0-SNAPSHOT</renjin.version>
   </properties>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>bedatadriven-oss</id>
+      <name>Renjin Latest Builds</name>
+      <url>http://nexus.bedatadriven.com/content/repositories/oss-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
   <dependencies>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -62,24 +70,21 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2.1</version>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
         <executions>
           <execution>
+            <id>simple-command</id>
+            <phase>package</phase>
             <goals>
-              <goal>java</goal>
+              <goal>attached</goal>
             </goals>
-            <phase>test</phase>
           </execution>
         </executions>
-        <configuration>
-          <mainClass>org.renjin.cran.Builder</mainClass>
-          <arguments>
-            <argument>${project.basedir}/packages</argument>
-            <argument>${project.build.directory}/reactor</argument>
-          </arguments>
-        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -12,9 +12,6 @@ import com.google.common.io.InputSupplier;
 
 public class ExampleRunner extends CranVisitor {
 
-	public static void main(String[] args) {
-		new CranLocalExplorer().accept(CranIntegrationTests.getPackageRoot(), new ExampleRunner());
-	}
 	
 	@Override
 	public CranPackageVisitor visitPackage(String name) {

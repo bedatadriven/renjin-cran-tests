@@ -16,7 +16,7 @@ public class LocAnalyzer extends CranVisitor {
 	public static void main(String[] args) {
 		LocAnalyzer analyzer = new LocAnalyzer();
 		CranLocalExplorer explorer = new CranLocalExplorer();
-		explorer.accept(CranIntegrationTests.getPackageRoot(), analyzer);
+	//	explorer.accept(CranIntegrationTests.getPackageRoot(), analyzer);
 		
 		analyzer.print();
 		

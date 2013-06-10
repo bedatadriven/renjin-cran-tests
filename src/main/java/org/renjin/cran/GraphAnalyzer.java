@@ -11,7 +11,7 @@ public class GraphAnalyzer extends CranVisitor {
 
 	public static void main(String[] args) {
 		CranLocalExplorer explorer = new CranLocalExplorer();
-		explorer.accept(CranIntegrationTests.getPackageRoot(), new GraphAnalyzer());
+	//	explorer.accept(CranIntegrationTests.getPackageRoot(), new GraphAnalyzer());
 	}
 	
 	private DirectedGraph<PackageNode, Edge> graph = 

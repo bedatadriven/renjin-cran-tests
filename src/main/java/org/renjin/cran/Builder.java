@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.Strings;
 import org.apache.maven.model.DeploymentRepository;
 import org.apache.maven.model.DistributionManagement;
 import org.apache.maven.model.Model;
@@ -25,29 +26,54 @@ public class Builder {
   
   public static void main(String[] args) throws IOException {
     Builder builder = new Builder();
-    builder.packagesFile = new File(args[0]);
-    builder.outputDir = new File(args[1]);
-    builder.run();
+    builder.outputDir = new File(args[0]);
+    builder.outputDir.mkdirs();
+
+    if(args.length > 1 && args[1].equals("unpack")) {
+      builder.unpack();
+    }
+    builder.updatePoms();
   }
   
-  private void run() throws IOException {
-       
-    Set<String> list = readPkgList();
-    
-    for(String pkg : list) {
-      System.out.println(pkg);
-      ProjectBuilder projectBuilder = new ProjectBuilder(pkg, outputDir);
-      projectBuilder.run();
-      
-      if(projectBuilder.isSuccessful()) {
-        modules.add(pkg + "_" + projectBuilder.getVersion());
+  private void unpack() throws IOException {
+
+    // download package index
+    File packageIndex = new File(outputDir, "index.html");
+    if(!packageIndex.exists()) {
+      CRAN.fetchPackageIndex(packageIndex);
+    }
+    List<CranPackage> cranPackages = CRAN.parsePackageList(
+        Files.newInputStreamSupplier(packageIndex));
+
+    for(CranPackage pkg : cranPackages) {
+      System.out.println(pkg.getName());
+      String pkgName = pkg.getName().trim();
+      if(!Strings.isNullOrEmpty(pkgName)) {
+        File pkgRoot = new File(outputDir, pkgName);
+        CRAN.unpackSources(pkg, pkgRoot);
       }
-    } 
-    
-    writePom();
+    }
   }
-  
-  private void writePom() throws IOException {
+
+  private void updatePoms() throws IOException {
+
+    for(File dir : outputDir.listFiles()) {
+      if(dir.isDirectory()) {
+        try {
+          ProjectBuilder builder = new ProjectBuilder(dir);
+          builder.writePom();
+          modules.add(dir.getName());
+        } catch(Exception e) {
+          System.err.println("Error building POM for " + dir.getName());
+          e.printStackTrace(System.err);
+        }
+      }
+    }
+
+    writeReactorPom();
+  }
+
+  private void writeReactorPom() throws IOException {
 
     Model model = new Model();
     model.setModelVersion("4.0.0");
@@ -68,7 +94,7 @@ public class Builder {
     DeploymentRepository snapshotRepo = new DeploymentRepository();
     snapshotRepo.setId("bedatadriven-oss");
     snapshotRepo.setName("Bedatadriven Open-Source snapshots");
-    snapshotRepo.setUrl("http://nexus.bedatadriven.com/content/repositories/oss-snapshots");
+    snapshotRepo.setUrl("http://nexus.bedatadriven.com/content/repositories/renjin-cran-0.7.0");
 
     DistributionManagement dist = new DistributionManagement();
     dist.setRepository(repo);

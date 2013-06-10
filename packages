@@ -17,3 +17,10 @@ nlme
 nnet
 rpart
 spatial
+lubridate
+mlogit
+statmod
+lmtest
+maxLik
+zoo
+
