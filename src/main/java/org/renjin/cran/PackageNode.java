@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.renjin.cran.PackageDescription.PackageDependency;
-import org.renjin.cran.Reporter.PackageReporter;
+import org.renjin.cran.Reporter.PackageReport;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -32,6 +32,10 @@ public class PackageNode {
     return description;
   }
   
+  public File getBaseDir() {
+    return baseDir;
+  }
+  
   @Override
   public String toString() {
     return getName();
@@ -42,15 +46,4 @@ public class PackageNode {
     pom.writePom();
   }
 
-  public boolean build(PackageReporter reporter)  {
-    PackageBuilder builder = new PackageBuilder(baseDir, reporter);
-    Thread buildThread = new Thread(builder);
-    buildThread.start();
-    try {
-      buildThread.join(5 * 60 * 1000);
-      return builder.succeeded();
-    } catch (InterruptedException e) {
-      return false;
-    }
-  }
 }

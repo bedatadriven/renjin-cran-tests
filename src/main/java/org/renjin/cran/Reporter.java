@@ -3,9 +3,10 @@ package org.renjin.cran;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapper;
@@ -15,23 +16,38 @@ import freemarker.template.TemplateException;
 public class Reporter {
 
   private File reportDir;
-  private List<PackageReporter> packages = Lists.newArrayList();
+  private Map<String, PackageReport> packages = Maps.newHashMap();
 
   public Reporter(File reportDir) {
     this.reportDir = reportDir;
   }
   
-  public PackageReporter getPackageReporter(PackageNode node) {
-    PackageReporter packageReporter = new PackageReporter(node);
-    packages.add(packageReporter);
-    return packageReporter;
+  public File getLogDestination(PackageNode node) {
+    File pkgDir = getPackageReportDir(node);
+    File logFile = new File(pkgDir, "build.log.txt");
+    return logFile;
+  }
+
+  private File getPackageReportDir(PackageNode node) {
+    File pkgDir = new File(reportDir, node.getName());
+    return pkgDir;
   }
   
-  public List<PackageReporter> getPackages() {
-    return packages;
+  public Collection<PackageReport> getPackages() {
+    return packages.values();
   }
   
-  public void writeIndex() throws IOException, TemplateException {
+  public void recordBuildResult(BuildResult completed) {
+    packages.put(completed.getPackage().getName(), new PackageReport(completed));
+  }
+  
+
+  public void recordUnbuilt(PackageNode node) {
+    packages.put(node.getName(), new PackageReport(node));
+  }
+
+  
+  public void writeReports() throws IOException, TemplateException {
     Configuration cfg = new Configuration();
     cfg.setClassForTemplateLoading(getClass(), "/");
     cfg.setObjectWrapper(new DefaultObjectWrapper());
@@ -42,55 +58,60 @@ public class Reporter {
     template.process(this, writer);
     writer.close();
   
-    for(PackageReporter pkg : packages) {
+    for(PackageReport pkg : packages.values()) {
       pkg.writeHtml(cfg);
     }
   }
   
-  public class PackageReporter {
+  public class PackageReport {
 
-    private PackageNode node;
+    private BuildResult result;
+    private PackageNode pkg;
     private File pkgDir;
-    private int exitCode;
     
-    public PackageReporter(PackageNode node) {
-      this.node = node;
-      this.pkgDir = new File(reportDir, node.getName());
-      this.pkgDir.mkdirs();
+    public PackageReport(BuildResult result) {
+      this.result = result;
+      this.pkg = result.getPackage();
+      this.pkgDir = getPackageReportDir(pkg);
     }
     
+    public PackageReport(PackageNode node) {
+      this.result = null;
+      this.pkg = node;
+      this.pkgDir = getPackageReportDir(pkg);
+    }
+
     public void writeHtml(Configuration cfg) throws IOException, TemplateException {
-      
+      pkgDir.mkdirs(); 
       FileWriter index = new FileWriter(new File(pkgDir, "index.html"));
       
       Template template = cfg.getTemplate("package.ftl");
       template.process(this, index);
       index.close();
-     
     }
 
     public File getBuildOutputFile() {
-      return new File(pkgDir, "build.log");
-    }
-
-    public void reportOutcome(int exitCode) {
-      this.exitCode = exitCode;
-    }
-    
-    public boolean getSucceeded() {
-      return exitCode == 0;
+      return new File(pkgDir, "build.log.txt");
     }
     
     public String getName() {
-      return node.getName();
+      return pkg.getName();
     }
     
-    public String getDescription() {
-      return node.getDescription().getDescription();
+    public boolean getWasBuilt() {
+      return result != null;
+    }
+    
+    public BuildResult getBuildResult() {
+      return result;
+    }
+    
+    public PackageDescription getDescription() {
+      return pkg.getDescription();
     }
     
     public String getShortDescription() {
-      String desc = getDescription();
+      String desc = getDescription().getDescription();
 
       for(int i=150;i<desc.length();++i) {
         if(desc.charAt(i) == ' ') {

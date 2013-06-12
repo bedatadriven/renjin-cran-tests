@@ -1,54 +1,78 @@
 package org.renjin.cran;
 
 import java.io.File;
+import java.util.concurrent.Callable;
 
-import org.renjin.cran.Reporter.PackageReporter;
-
-public class PackageBuilder implements Runnable {
+public class PackageBuilder implements Callable<BuildResult> {
   
-  private File baseDir;
-  private boolean succeeded = false;
-  private PackageReporter reporter;
+  private PackageNode pkg;
+  private File logFile;
 
-  public PackageBuilder(File baseDir, PackageReporter reporter) {
-    this.baseDir = baseDir;
-    this.reporter = reporter;
+  public static final long TIMEOUT_SECONDS = 20;
+  
+  public PackageBuilder(PackageNode pkg, File logFile) {
+    this.pkg = pkg;
+    this.logFile = logFile;
   }
+  
 
   @Override
-  public void run() {
+  public BuildResult call() throws Exception {
+   
+    Thread.currentThread().setName(pkg.getName() + " [main]");
     
-    ProcessBuilder builder = new ProcessBuilder(getMavenPath(), "-X", 
+    BuildResult result = new BuildResult(pkg);
+    
+    pkg.writePom();
+    
+    ProcessBuilder builder = new ProcessBuilder(getMavenPath(), 
         "-Dmaven.ignore.test.failures=true",
         "-DenvClassifier=linux-x86_64",
         "clean", "install");
     
-    builder.directory(baseDir);
+    builder.directory(pkg.getBaseDir());
     builder.redirectErrorStream(true);
     try {
+      long startTime = System.currentTimeMillis();
       Process process = builder.start();
       
-      OutputCollector collector = new OutputCollector(process.getInputStream(),
-          reporter.getBuildOutputFile());
+      OutputCollector collector = new OutputCollector(process.getInputStream(), logFile);
+      collector.setName(pkg + " [output collector]");
       collector.start();
       
-      int exitCode = process.waitFor();
+      ProcessMonitor monitor = new ProcessMonitor(process);
+      monitor.setName(pkg + " [monitor]");
+      monitor.start();
+      
+      while(!monitor.isFinished()) {
+       
+        if(System.currentTimeMillis() > (startTime + TIMEOUT_SECONDS * 1000)) {
+          System.out.println(pkg + " build timed out after " + TIMEOUT_SECONDS + " seconds.");
+          process.destroy();
+          result.setTimedOut(true);
+          break;
+        }
+        Thread.sleep(1000);
+      }
+           
       collector.join();
-      reporter.reportOutcome(exitCode);
-      succeeded = (exitCode == 0);
+      if(!result.isTimedOut()) {
+        result.setSucceeded(monitor.getExitCode() == 0);
+      }
     } catch (Exception e) {
-      succeeded = false;
+      result.setSucceeded(false);
       e.printStackTrace();
-    } 
+    }
+    return result; 
   }
 
   private String getMavenPath() {
-    return "mvn";
-    
+    if(System.getProperty("os.name").toLowerCase().contains("windows")) {
+      return "mvn.bat";
+    } else {
+      return "mvn";
+    }
   }
 
-  public boolean succeeded() {
-    return succeeded;
-  }
 
 }

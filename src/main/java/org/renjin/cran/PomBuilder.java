@@ -32,7 +32,6 @@ public class PomBuilder {
 
   private File baseDir;
 
-  private Set<String> corePackages = Sets.newHashSet("stats", "stats4", "graphics", "grDevices", "utils", "methods", "datasets", "splines");
 
   private boolean successful = true;
   private final PackageDescription description;
@@ -166,7 +165,7 @@ public class PomBuilder {
       throws IOException {
     Dependency mavenDep = new Dependency();
     mavenDep.setArtifactId(pkgName);
-    if(corePackages.contains(pkgName)) {
+    if(CorePackages.isCorePackage(pkgName)) {
       mavenDep.setGroupId("org.renjin");
       mavenDep.setVersion(RENJIN_VERSION);
     } else {

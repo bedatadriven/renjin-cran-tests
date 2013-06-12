@@ -3,10 +3,20 @@ package org.renjin.cran;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import org.renjin.cran.PackageDescription.PackageDependency;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import freemarker.template.TemplateException;
@@ -20,8 +30,26 @@ public class Builder {
   private File outputDir;
   private Map<String, PackageNode> nodes = Maps.newHashMap();
 
-  public static void main(String[] args) throws IOException, TemplateException {
-    
+  /**
+   * List of projects that still need to be built
+   */
+  private List<PackageNode> toBuild;
+ 
+  /**
+   * Set of packages scheduled to build
+   */
+  private Set<PackageNode> scheduled = Sets.newHashSet();
+
+  /**
+   * Set of all projects that have been successfully built.
+   */
+  private Set<PackageNode> built = Sets.newHashSet();
+  
+  
+  private int maxNumberToBuild = Integer.MAX_VALUE;
+ 
+  public static void main(String[] args) throws Exception {
+
     Builder builder = new Builder();
     builder.outputDir = new File(args[0]);
     builder.outputDir.mkdirs();
@@ -29,11 +57,11 @@ public class Builder {
     if(args.length > 1 && args[1].equals("unpack")) {
       builder.unpack();
     }
-    builder.buildNodes();
+    builder.scanForProjects();
     builder.buildPackages();
 
   }
-  
+
   private void unpack() throws IOException {
 
     // download package index
@@ -58,10 +86,10 @@ public class Builder {
    * Build the list of package nodes from the package
    * directories present.
    */
-  private void buildNodes() throws IOException {
+  private void scanForProjects() throws IOException {
 
     System.out.println("Scanning for packages...");
-    
+
     for(File dir : outputDir.listFiles()) {
       if(dir.isDirectory() && !dir.getName().equals("00buildlogs")) {
         try {
@@ -74,29 +102,89 @@ public class Builder {
       }
     }
   }
-  
-  private void buildPackages() throws IOException, TemplateException {
-        
+
+  private void buildPackages() throws IOException, TemplateException, InterruptedException, ExecutionException {
+
+    if(System.getProperty("max.builds")!=null) {
+      maxNumberToBuild = 5;
+    }
+    
+    System.out.println("Starting build...");
+    
     File reportDir = new File(outputDir, "00buildlogs");
     reportDir = new File(reportDir, System.getProperty("BUILD_NUMBER"));
     reportDir.mkdirs();
-    
+
     Reporter reporter = new Reporter(reportDir);
+
+    toBuild = Lists.newArrayList(nodes.values());
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getThreadPoolSize());
+    ExecutorCompletionService<BuildResult> service = new ExecutorCompletionService<BuildResult>(executor);
+
+    int scheduledCount = 0;
     
-    PackageGraph graph = new PackageGraph(nodes);
-    List<PackageNode> buildOrder = graph.sortTopologically();
-    
-    for(PackageNode node : buildOrder) {
-      System.out.println("Building " + node + "...");
-      node.writePom();
-      boolean succeeded = node.build(reporter.getPackageReporter(node));
-      if(succeeded) { 
-        System.out.println("SUCCESS");
-      } else {
-        System.out.println("FAILURE");
+    while(true) {
+
+      // schedule any packages whose dependencies have been met
+      ListIterator<PackageNode> it = toBuild.listIterator();
+      while(it.hasNext()) {
+        PackageNode pkg = it.next();
+        if(dependenciesAreResolved(pkg) && scheduledCount < maxNumberToBuild) {
+          System.out.println("Scheduling " + pkg + "...");
+          service.submit(new PackageBuilder(pkg, reporter.getLogDestination(pkg)));
+          scheduled.add(pkg);
+          scheduledCount ++;
+          it.remove();
+        }
+      }
+      
+      // Is our queue empty? In that case any remaining items
+      // to build have unresolvable dependencies
+      if(scheduled.isEmpty()) {
+        break;
+      }
+      
+      // wait for the next package to complete
+      BuildResult completed = service.take().get();
+      scheduled.remove(completed.getPackage());
+
+      reporter.recordBuildResult(completed);
+      System.out.println(completed.getPackage() + " " +
+          (completed.isSucceeded() ? "SUCCEEDED" : "FAILED"));
+      
+      // if it's succeeded, add to list of 
+      if(completed.isSucceeded()) {
+        built.add(completed.getPackage());
       }
     }
     
-    reporter.writeIndex();
+    // close down the threadpool
+    executor.shutdown();
+    
+    System.out.println("Build complete; " + toBuild.size() + " package(s) with unmet dependencies");
+    for(PackageNode node : toBuild) {
+      reporter.recordUnbuilt(node);
+    }
+    
+    reporter.writeReports();
+  }
+
+  private int getThreadPoolSize() {
+    return Runtime.getRuntime().availableProcessors();
+  }
+
+  private boolean dependenciesAreResolved(PackageNode pkg) {
+    for(PackageDependency node : pkg.getDescription().getDepends()) {
+      if(!node.getName().equals("R") && !CorePackages.isCorePackage(node.getName())) {
+        PackageNode depNode = nodes.get(node.getName());
+        if(depNode == null) {
+          return false;
+        }
+        if(!built.contains(depNode)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 }
