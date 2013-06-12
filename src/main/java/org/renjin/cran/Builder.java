@@ -60,6 +60,8 @@ public class Builder {
    */
   private void buildNodes() throws IOException {
 
+    System.out.println("Scanning for packages...");
+    
     for(File dir : outputDir.listFiles()) {
       if(dir.isDirectory() && !dir.getName().equals("00buildlogs")) {
         try {
@@ -84,7 +86,6 @@ public class Builder {
     PackageGraph graph = new PackageGraph(nodes);
     List<PackageNode> buildOrder = graph.sortTopologically();
     
-    int count = 0;
     for(PackageNode node : buildOrder) {
       System.out.println("Building " + node + "...");
       node.writePom();
@@ -93,11 +94,6 @@ public class Builder {
         System.out.println("SUCCESS");
       } else {
         System.out.println("FAILURE");
-      }
-      count++;
-      
-      if(count > 10) {
-        break;
       }
     }
     
