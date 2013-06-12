@@ -1,20 +1,11 @@
 package org.renjin.cran;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.util.Properties;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
 
-import com.google.common.base.Preconditions;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.maven.model.Build;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Developer;
@@ -23,7 +14,6 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.Parent;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.PluginExecution;
-import org.apache.maven.model.Repository;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.renjin.cran.PackageDescription.PackageDependency;
@@ -31,9 +21,13 @@ import org.renjin.cran.PackageDescription.Person;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import com.google.common.io.ByteStreams;
 
-public class ProjectBuilder {
+/**
+ * Constructs a Maven Projct Object Model (POM) from a GNU-R style
+ * package folder and DESCRIPTION file.
+ *
+ */
+public class PomBuilder {
   private static final String RENJIN_VERSION = "0.7.0-SNAPSHOT";
 
   private File baseDir;
@@ -43,7 +37,7 @@ public class ProjectBuilder {
   private boolean successful = true;
   private final PackageDescription description;
 
-  public ProjectBuilder(File baseDir) throws IOException {
+  public PomBuilder(File baseDir) throws IOException {
     this.baseDir = baseDir;
     description = readDescription();
   }
