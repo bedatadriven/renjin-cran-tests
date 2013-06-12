@@ -1,11 +1,7 @@
 package org.renjin.cran;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.Callable;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Files;
 
 public class PackageBuilder implements Callable<BuildResult> {
   

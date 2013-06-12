@@ -5,6 +5,14 @@
 
   <p class="lead">${description.description}</p>
   
+  <#if dependencies?has_content>
+  <p>Dependencies: 
+  <#list dependencies as dependency>
+  <a href="${dependency.name}.html" class="label label-${dependency.className}">${dependency.name}</a>
+  </#list>
+  </p>
+  </#if>
+  
   <table>
   	<tr>
   		<td>Author</td>
@@ -18,6 +26,20 @@
   		<td>License</td>
   		<td>${description.license!"Not specified"}</td>
   	</tr>
+  </table>
+  
+  <h2>Languages</h2>
+  <table class="table span4">
+  	<thead>
+  		<th>Language</th>
+  		<th>Lines of Code</th>
+  	</thead>
+  	<#list linesOfCode?keys as lang>
+  	<tr>
+  		<td>${lang}</td>
+  		<td align="right">${linesOfCode[lang]}</td>
+  	</tr> 
+	</#list>
   </table>
   
   <#if wasBuilt>

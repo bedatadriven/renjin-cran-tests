@@ -1,37 +1,28 @@
 <#include "base.ftl">
 <@scaffolding>
 
+  <div class="row">
+  <div class="span12"> 
   <h1>Packages</h1>
 
-  <table>
+  <table class="table table-condensed">
   	<tr>
   		<td>&nbsp;</td>
-  		<td>Package name</td>
-  		<td>Notes</td>
+  		<td>Package</td>
+  		<td>Languages</td>
+  		<td>Description</td>
   	</tr>
   	
   	<#list packages?sort_by("name") as package>
   		<tr>
-  			<td>
-  			<#if package.wasBuilt>
-	  			<#if package.buildResult.succeeded>
-	  			<i class="icon-ok" title="Build succeeded"></i>
-	  			<#else>
-	  			<i class="icon-remove" title="Build failed"></i>
-	  			</#if>
-	  		<#else>
-	  			<i class="icon-warning" title="Not built because of incomplete dependencies">
-	  		</#if>
-  			</td>
-  			<td>
-  			<a href="${package.name}/index.html" title="${package.description.description}">${package.name}</a></td>
-  			<td>
-  			<#if !package.wasBuilt>
-  			Unmet dependencies
-  			</td>
-  			</#if>
+  			<td><img src="http://packages.renjin.org.s3.amazonaws.com/img/${package.outcome}16.png" width="16" height="16"></td>
+  			<td><a href="packages/${package.name}.html">${package.name}</a></td>
+  			<td><#list package.nativeLanguages as lang>${lang} </#list></td>
+  			<td>${package.shortDescription}</td>
   		</tr>
   	</#list>
   </table>
+  </div>
+  </div>
 
 </@scaffolding>
