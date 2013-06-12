@@ -179,7 +179,7 @@ public class BuildReport {
   
   
   public static void main(String[] args) throws Exception {
-    BuildReport report = new BuildReport(new File("F:\\cran"), new File("F:\\cran-reports"));
+    BuildReport report = new BuildReport(new File(args[0]), new File(args[1]));
     report.writeReports();
   }
 }
