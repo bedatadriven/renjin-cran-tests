@@ -87,7 +87,7 @@
             <configuration>
               <mainClass>org.renjin.cran.Builder</mainClass>
               <arguments>
-                <argument>F:\cran</argument>
+                <argument>/vol/packages</argument>
               </arguments>
             </configuration>
           </execution>
