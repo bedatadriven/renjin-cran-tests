@@ -14,7 +14,7 @@ public class PackageBuilder implements Callable<BuildResult> {
 
   public static final long TIMEOUT_SECONDS = 5 * 60;
   
-  public PackageBuilder(PackageNode pkg, File logFile) {
+  public PackageBuilder(PackageNode pkg) {
     this.pkg = pkg;
     this.logFile = new File(pkg.getBaseDir(), "build.log");
   }
@@ -30,7 +30,8 @@ public class PackageBuilder implements Callable<BuildResult> {
     // write the POM to the base dir
     pkg.writePom();
     
-    BuildResult result = new BuildResult(pkg);
+    BuildResult result = new BuildResult();
+    result.setPackageName(pkg.getName());
     
     ProcessBuilder builder = new ProcessBuilder(getMavenPath(), 
         "-Dmaven.test.failure.ignore=true",
@@ -56,32 +57,26 @@ public class PackageBuilder implements Callable<BuildResult> {
         if(System.currentTimeMillis() > (startTime + TIMEOUT_SECONDS * 1000)) {
           System.out.println(pkg + " build timed out after " + TIMEOUT_SECONDS + " seconds.");
           process.destroy();
-          result.setTimedOut(true);
-          writeResult("TIMEOUT");
-
+          result.setOutcome(BuildOutcome.TIMEOUT);
           break;
         }
         Thread.sleep(1000);
       }
            
       collector.join();
-      if(!result.isTimedOut()) {
-        result.setSucceeded(monitor.getExitCode() == 0);
+      if(result.getOutcome() != BuildOutcome.TIMEOUT) {
+        if(monitor.getExitCode() == 0) {
+          result.setOutcome(BuildOutcome.SUCCESS);
+        } else { 
+          result.setOutcome(BuildOutcome.ERROR);
+        }
       }
       
-      writeResult(result.isSucceeded() ? "SUCCESS" : "FAILED");
-      
     } catch (Exception e) {
-      writeResult("FAILED");
-      result.setSucceeded(false);
+      result.setOutcome(BuildOutcome.ERROR);
       e.printStackTrace();
     }
     return result; 
-  }
-
-  private void writeResult(String result) throws IOException {
-    File resultFile = new File(pkg.getBaseDir(), "build.result");
-    Files.write(result, resultFile, Charsets.UTF_8);
   }
   
   private String getMavenPath() {

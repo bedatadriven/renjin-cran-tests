@@ -2,14 +2,8 @@ package org.renjin.cran;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-
-import org.renjin.cran.PackageDescription.PackageDependency;
-import org.renjin.cran.Reporter.PackageReport;
 
 import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 public class PackageNode {

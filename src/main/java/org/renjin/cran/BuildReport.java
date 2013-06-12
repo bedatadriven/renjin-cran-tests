@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
+import org.codehaus.jackson.map.ObjectMapper;
+
 import com.google.common.collect.Maps;
 
 import freemarker.template.Configuration;
@@ -13,37 +15,27 @@ import freemarker.template.DefaultObjectWrapper;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 
-public class Reporter {
+public class BuildReport {
 
   private File reportDir;
   private Map<String, PackageReport> packages = Maps.newHashMap();
 
-  public Reporter(File reportDir) {
+  public BuildReport(File outputDir, File reportDir) throws Exception {
+    
     this.reportDir = reportDir;
-  }
-  
-  public File getLogDestination(PackageNode node) {
-    File pkgDir = getPackageReportDir(node);
-    File logFile = new File(pkgDir, "build.log.txt");
-    return logFile;
-  }
-
-  private File getPackageReportDir(PackageNode node) {
-    File pkgDir = new File(reportDir, node.getName());
-    return pkgDir;
+    this.reportDir.mkdirs();
+    
+    ObjectMapper mapper = new ObjectMapper();
+    BuildResults results = mapper.readValue(new File(outputDir, "build.json"), BuildResults.class);
+    for(BuildResult result : results.getResults()) {
+      PackageNode node = new PackageNode(new File(outputDir, result.getPackageName()));
+      packages.put(node.getName(), new PackageReport(node, result.getOutcome()));
+    }
+    
   }
   
   public Collection<PackageReport> getPackages() {
     return packages.values();
-  }
-  
-  public void recordBuildResult(BuildResult completed) {
-    packages.put(completed.getPackage().getName(), new PackageReport(completed));
-  }
-  
-
-  public void recordUnbuilt(PackageNode node) {
-    packages.put(node.getName(), new PackageReport(node));
   }
 
   
@@ -65,22 +57,16 @@ public class Reporter {
   
   public class PackageReport {
 
-    private BuildResult result;
     private PackageNode pkg;
     private File pkgDir;
+    private BuildOutcome outcome;
     
-    public PackageReport(BuildResult result) {
-      this.result = result;
-      this.pkg = result.getPackage();
-      this.pkgDir = getPackageReportDir(pkg);
+    public PackageReport(PackageNode pkg, BuildOutcome outcome) {
+      this.pkg = pkg;
+      this.pkgDir = pkg.getBaseDir();
+      this.outcome = outcome;
     }
     
-    public PackageReport(PackageNode node) {
-      this.result = null;
-      this.pkg = node;
-      this.pkgDir = getPackageReportDir(pkg);
-    }
-
     public void writeHtml(Configuration cfg) throws IOException, TemplateException {
       pkgDir.mkdirs(); 
       FileWriter index = new FileWriter(new File(pkgDir, "index.html"));
@@ -98,12 +84,8 @@ public class Reporter {
       return pkg.getName();
     }
     
-    public boolean getWasBuilt() {
-      return result != null;
-    }
-    
-    public BuildResult getBuildResult() {
-      return result;
+    public BuildOutcome getOutcome() {
+      return outcome;
     }
     
     public PackageDescription getDescription() {
@@ -122,4 +104,8 @@ public class Reporter {
     }
   }
   
+  public static void main(String[] args) throws Exception {
+    BuildReport report = new BuildReport(new File("F:\\cran"), new File("cran-reports"));
+    report.writeReports();
+  }
 }

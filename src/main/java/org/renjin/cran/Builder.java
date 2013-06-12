@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.codehaus.jackson.map.ObjectMapper;
 import org.renjin.cran.PackageDescription.PackageDependency;
 
 import com.google.common.base.Strings;
@@ -18,8 +18,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-
-import freemarker.template.TemplateException;
 
 /**
  * Program that will retrieve package sources from CRAN,
@@ -103,20 +101,16 @@ public class Builder {
     }
   }
 
-  private void buildPackages() throws IOException, TemplateException, InterruptedException, ExecutionException {
+  private void buildPackages() throws Exception {
 
     if(System.getProperty("max.builds")!=null) {
       maxNumberToBuild = 5;
     }
     
     System.out.println("Starting build...");
+
+    List<BuildResult> results = Lists.newArrayList();
     
-    File reportDir = new File(outputDir, "00buildlogs");
-    reportDir = new File(reportDir, System.getProperty("BUILD_NUMBER"));
-    reportDir.mkdirs();
-
-    Reporter reporter = new Reporter(reportDir);
-
     toBuild = Lists.newArrayList(nodes.values());
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getThreadPoolSize());
     ExecutorCompletionService<BuildResult> service = new ExecutorCompletionService<BuildResult>(executor);
@@ -131,7 +125,7 @@ public class Builder {
         PackageNode pkg = it.next();
         if(dependenciesAreResolved(pkg) && scheduledCount < maxNumberToBuild) {
           System.out.println("Scheduling " + pkg + "...");
-          service.submit(new PackageBuilder(pkg, reporter.getLogDestination(pkg)));
+          service.submit(new PackageBuilder(pkg));
           scheduled.add(pkg);
           scheduledCount ++;
           it.remove();
@@ -145,28 +139,48 @@ public class Builder {
       }
       
       // wait for the next package to complete
-      BuildResult completed = service.take().get();
-      scheduled.remove(completed.getPackage());
+      BuildResult result = service.take().get();
+      PackageNode completed = nodes.get(result.getPackageName());
+      scheduled.remove(completed);
 
-      reporter.recordBuildResult(completed);
-      System.out.println(completed.getPackage() + " " +
-          (completed.isSucceeded() ? "SUCCEEDED" : "FAILED"));
+      results.add(result);
       
-      // if it's succeeded, add to list of 
-      if(completed.isSucceeded()) {
-        built.add(completed.getPackage());
+      System.out.println(result.getPackageName() + ": " + result.getOutcome());
+      
+      // if it's succeeded, add to list of packages that
+      // are now available as dependencies
+      if(result.getOutcome() == BuildOutcome.SUCCESS) {
+        built.add(completed);
       }
+      
+      // report status periodically
+      if(results.size() % 50 == 0) {
+        System.out.println(results.size() + "/" + nodes.size() + " builds completed; " + built.size() + " successful.");
+      }
+      
     }
     
     // close down the threadpool
     executor.shutdown();
     
     System.out.println("Build complete; " + toBuild.size() + " package(s) with unmet dependencies");
+    
     for(PackageNode node : toBuild) {
-      reporter.recordUnbuilt(node);
+      results.add(new BuildResult(node.getName(), BuildOutcome.NOT_BUILT));
     }
     
-    reporter.writeReports();
+    writeResults(new BuildResults(results));    
+  }
+
+  /**
+   * Write the results of the build to a JSON file so we can subsequently
+   * generate build reports
+   * @param results
+   * @throws Exception
+   */
+  private void writeResults(BuildResults results) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.writeValue(new File(outputDir, "build.json"), results);
   }
 
   private int getThreadPoolSize() {

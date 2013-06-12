@@ -2,42 +2,32 @@ package org.renjin.cran;
 
 public class BuildResult {
 
-  private final PackageNode pkg;
-  private long buildDuration;
-  private boolean timedOut;
-  private boolean succeeded;
+  private String packageName;
+  private BuildOutcome outcome;
+ 
   
-  public BuildResult(PackageNode pkg) {
-    this.pkg = pkg;
-  }
-
-
-  public long getBuildDuration() {
-    return buildDuration;
-  }
-
-  public void setBuildDuration(long buildDuration) {
-    this.buildDuration = buildDuration;
-  }
-
-  public boolean isTimedOut() {
-    return timedOut;
-  }
-
-  public void setTimedOut(boolean timedOut) {
-    this.timedOut = timedOut;
-  }
-
-  public boolean isSucceeded() {
-    return succeeded;
-  }
-
-  public void setSucceeded(boolean succeeded) {
-    this.succeeded = succeeded;
+  public BuildResult() {
+    
   }
   
-  public PackageNode getPackage() {
-    return pkg;
+  public BuildResult(String name, BuildOutcome outcome) {
+    this.packageName = name;
+    this.outcome = outcome;
   }
-  
+
+  public String getPackageName() {
+    return packageName;
+  }
+
+  public void setPackageName(String packageName) {
+    this.packageName = packageName;
+  }
+
+  public BuildOutcome getOutcome() {
+    return outcome;
+  }
+
+  public void setOutcome(BuildOutcome outcome) {
+    this.outcome = outcome;
+  }  
 }
