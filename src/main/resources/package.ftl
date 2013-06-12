@@ -41,12 +41,19 @@
   	</tr> 
 	</#list>
   </table>
+  </div>
   
   <#if wasBuilt>
+  
+  <h2>Maven Artifact</h2>
+  
+  <code>
+  	
+  
   <h2>Build Output</h2>
   
-  <iframe src="build.log.txt" width="100%" height="250px" style="border: 1px solid black">
+  <iframe src="${name}.log.txt" width="100%" height="250px" style="border: 1px solid black">
   </iframe>
-  <p class="pull-right small"><a href="build.log.txt">View fullscreen</a></p>
+  <p class="pull-right small"><a href="${name}.log.txt">View fullscreen</a></p>
   </#if>
 </@scaffolding>

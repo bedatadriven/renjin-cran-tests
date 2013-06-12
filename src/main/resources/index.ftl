@@ -15,7 +15,7 @@
   	
   	<#list packages?sort_by("name") as package>
   		<tr>
-  			<td><img src="http://packages.renjin.org.s3.amazonaws.com/img/${package.outcome}16.png" width="16" height="16"></td>
+  			<td><img src="/img/${package.outcome}16.png" width="16" height="16"></td>
   			<td><a href="packages/${package.name}.html">${package.name}</a></td>
   			<td><#list package.nativeLanguages as lang>${lang} </#list></td>
   			<td>${package.shortDescription}</td>
