@@ -8,7 +8,7 @@ public class PackageBuilder implements Callable<BuildResult> {
   private PackageNode pkg;
   private File logFile;
 
-  public static final long TIMEOUT_SECONDS = 20;
+  public static final long TIMEOUT_SECONDS = 5 * 60;
   
   public PackageBuilder(PackageNode pkg, File logFile) {
     this.pkg = pkg;
