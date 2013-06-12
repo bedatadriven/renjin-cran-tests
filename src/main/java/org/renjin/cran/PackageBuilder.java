@@ -43,7 +43,7 @@ public class PackageBuilder implements Runnable {
   }
 
   private String getMavenPath() {
-    return "mvn.bat";
+    return "mvn";
     
   }
 
