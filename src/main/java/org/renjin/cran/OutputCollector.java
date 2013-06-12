@@ -21,6 +21,10 @@ public class OutputCollector extends Thread {
   }
 
   public void run() {
+    
+    // make sure the log file has a dir
+    logFile.getParentFile().mkdirs();
+    
     PrintStream out;
     try {
       out = new PrintStream(logFile);

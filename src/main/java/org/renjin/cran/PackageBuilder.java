@@ -19,6 +19,7 @@ public class PackageBuilder implements Callable<BuildResult> {
   @Override
   public BuildResult call() throws Exception {
    
+    
     Thread.currentThread().setName(pkg.getName() + " [main]");
     
     BuildResult result = new BuildResult(pkg);
