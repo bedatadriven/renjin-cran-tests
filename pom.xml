@@ -99,7 +99,7 @@
                 <goals>
                   <goal>java</goal>
                 </goals>
-                <phase>test</phase>
+                <phase>compile</phase>
                 <configuration>
                   <mainClass>org.renjin.cran.Builder</mainClass>
                   <arguments>
