@@ -61,7 +61,7 @@ public class Builder {
   private void buildNodes() throws IOException {
 
     for(File dir : outputDir.listFiles()) {
-      if(dir.isDirectory() && dir.getName().equals("00buildlogs")) {
+      if(dir.isDirectory() && !dir.getName().equals("00buildlogs")) {
         try {
           PackageNode node = new PackageNode(dir);
           nodes.put(node.getName(), node);
