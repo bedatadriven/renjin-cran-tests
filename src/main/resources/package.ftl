@@ -29,7 +29,7 @@
   </table>
   
   <h2>Languages</h2>
-  <table class="table span4">
+  <table class="table" style="width: auto">
   	<thead>
   		<th>Language</th>
   		<th>Lines of Code</th>
@@ -41,14 +41,10 @@
   	</tr> 
 	</#list>
   </table>
-  </div>
+  
   
   <#if wasBuilt>
   
-  <h2>Maven Artifact</h2>
-  
-  <code>
-  	
   
   <h2>Build Output</h2>
   
