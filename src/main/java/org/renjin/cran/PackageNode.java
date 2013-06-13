@@ -47,7 +47,7 @@ public class PackageNode {
     PomBuilder pom = new PomBuilder(baseDir);
     pom.writePom();
   }
-  
+
   public Map<String, Integer> countLoc() throws IOException {
     System.out.println("Counting lines of code in " + this);
     Map<String, Integer> map = Maps.newHashMap();
@@ -71,7 +71,7 @@ public class PackageNode {
         }
       }
     }
-    
+
   }
 
   private int countLoc(File srcFile) throws IOException {

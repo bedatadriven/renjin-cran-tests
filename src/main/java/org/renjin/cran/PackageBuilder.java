@@ -32,6 +32,7 @@ public class PackageBuilder implements Callable<BuildResult> {
     ProcessBuilder builder = new ProcessBuilder(getMavenPath(), 
         "-Dmaven.test.failure.ignore=true",
         "-DenvClassifier=linux-x86_64",
+        "-Dignore.legacy.compilation.failure=true",
         "clean", "install");
     
     builder.directory(pkg.getBaseDir());

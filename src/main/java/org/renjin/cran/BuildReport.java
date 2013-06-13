@@ -1,8 +1,6 @@
 package org.renjin.cran;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -101,10 +99,29 @@ public class BuildReport {
     
     private Map<String, Integer> loc;
     
+    private boolean legacyCompilationFailed = false;
+    private boolean testsFailed = false;
     
-    public PackageReport(PackageNode pkg, BuildOutcome outcome) {
+    public PackageReport(PackageNode pkg, BuildOutcome outcome) throws IOException {
       this.pkg = pkg;
       this.outcome = outcome;
+
+      parseBuildLog();
+    }
+    
+    private void parseBuildLog() throws IOException {
+      File logFile = new File(pkg.getBaseDir(), "build.log");
+      if(logFile.exists()) {
+        BufferedReader reader = new BufferedReader(new FileReader(logFile));
+        String line;
+        while((line=reader.readLine())!=null) {
+          if(line.contains("Compilation of legacy sources failed")) {
+            legacyCompilationFailed = true;
+          } else if(line.contains("There were R test failures")) {
+            testsFailed = true;
+          }
+        }
+      }
     }
     
     public List<PackageDep> getDependencies() {
@@ -130,6 +147,31 @@ public class BuildReport {
       Template template = cfg.getTemplate("package.ftl");
       template.process(this, index);
       index.close();
+    }
+
+    public boolean isLegacyCompilationFailed() {
+      return legacyCompilationFailed;
+    }
+
+    public boolean isTestsFailed() {
+      return testsFailed;
+    }
+
+    public String getDisplayClass() {
+      switch (outcome) {
+        case TIMEOUT:
+        case ERROR:
+          return "error";
+        case SUCCESS:
+          if(legacyCompilationFailed || testsFailed) {
+            return "warning";
+          } else {
+            return "success";
+          }
+        case NOT_BUILT:
+        default:
+          return "";
+      }
     }
 
     private String getLogFileName() {
@@ -179,7 +221,9 @@ public class BuildReport {
   
   
   public static void main(String[] args) throws Exception {
-    BuildReport report = new BuildReport(new File(args[0]), new File(args[1]));
+    BuildReport report = new BuildReport(
+        new File(System.getProperty("cran.dir")), 
+        new File(System.getProperty("reports.dir")));
     report.writeReports();
   }
 }

@@ -49,7 +49,7 @@ public class Builder {
   public static void main(String[] args) throws Exception {
 
     Builder builder = new Builder();
-    builder.outputDir = new File(args[0]);
+    builder.outputDir = new File(System.getProperty("cran.dir"));
     builder.outputDir.mkdirs();
 
     if(args.length > 1 && args[1].equals("unpack")) {
@@ -58,6 +58,17 @@ public class Builder {
     builder.scanForProjects();
     builder.buildPackages();
 
+  }
+  
+  public Builder() {
+    String maxBuilds = System.getProperty("package.limit");
+    if(Strings.isNullOrEmpty(maxBuilds)) {
+      maxNumberToBuild = Integer.MAX_VALUE; 
+    } else {
+      maxNumberToBuild = Integer.parseInt(maxBuilds);
+      System.out.println(" ");
+    }
+    
   }
 
   private void unpack() throws IOException {
@@ -184,7 +195,12 @@ public class Builder {
   }
 
   private int getThreadPoolSize() {
-    return Runtime.getRuntime().availableProcessors();
+    String property = System.getProperty("cran.thread.pool.size");
+    if(!Strings.isNullOrEmpty(property)) {
+      return Integer.parseInt(property);
+    } else {
+     return Runtime.getRuntime().availableProcessors();
+    }
   }
 
   private boolean dependenciesAreResolved(PackageNode pkg) {
