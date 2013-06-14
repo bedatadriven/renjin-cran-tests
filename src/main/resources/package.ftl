@@ -61,6 +61,7 @@
     <div>&lt;version&gt;${description.version}&lt;/version&gt;</div>
     <div>&lt;/dependency&gt;</div>
   </code>
+
   </#if>
 
   
@@ -73,25 +74,27 @@
   <table class="table" style="width: auto">
   <#list testResults as test>
   <tr class="<#if test.passed>success<#else>error</#if>">
-    <td>><a href="#test-${test.name}">${test.name}</a></td>
+    <td><a href="#test-${test.name}">${test.name}</a></td>
     <td><#if test.passed>OK<#else>ERROR</#if></td>
   </tr>
   </#list>
   </table>
 
   <#list testResults as test>
-  <a name="$test-${test.name}">
+  <a name="test-${test.name}"></a>
   <h3>${test.name}</h3>
-  <code>
-  ${test.output?html}
-  </code>
+  <pre>
+${test.output?html}
+  </pre>
   </#list>
 
 
   <h2>Build Output</h2>
 
-  <code>
-  ${buildOutput?html}
-  </code>
+  <pre>
+ ${buildOutput?html}
+  </pre>
+
+  </#if>
 
 </@scaffolding>
