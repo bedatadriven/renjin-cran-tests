@@ -33,21 +33,6 @@
 
   <p>${description.description}</p>
 
-  <table>
-  	<tr>
-  		<td>Author</td>
-  		<td>${description.author!"No Author"}
- 	</tr> 	
-  	<tr>
-  		<td>Maintainer</td>
-  		<td>${description.maintainer!"No Maintainer"}</td>
-  	</tr>
-  	<tr>
-  		<td>License</td>
-  		<td>${description.license!"Not specified"}</td>
-  	</tr>
-  </table>
-  
   <h2>Languages</h2>
   <table class="table" style="width: auto">
   	<thead>
@@ -76,18 +61,37 @@
     <div>&lt;version&gt;${description.version}&lt;/version&gt;</div>
     <div>&lt;/dependency&gt;</div>
   </code>
-
   </#if>
-
 
   
   <#if wasBuilt>
 
-  
+  <h2>Test Results</h2>
+
+  <h3>Summary</h3>
+
+  <table class="table" style="width: auto">
+  <#list testResults as test>
+  <tr class="<#if test.passed>success<#else>error</#if>">
+    <td>><a href="#test-${test.name}">${test.name}</a></td>
+    <td><#if test.passed>OK<#else>ERROR</#if></td>
+  </tr>
+  </#list>
+  </table>
+
+  <#list testResults as test>
+  <a name="$test-${test.name}">
+  <h3>${test.name}</h3>
+  <code>
+  ${test.output?html}
+  </code>
+  </#list>
+
+
   <h2>Build Output</h2>
-  
-  <iframe src="${name}.log.txt" width="100%" height="250px" style="border: 1px solid black">
-  </iframe>
-  <p class="pull-right small"><a href="${name}.log.txt">View fullscreen</a></p>
-  </#if>
+
+  <code>
+  ${buildOutput?html}
+  </code>
+
 </@scaffolding>

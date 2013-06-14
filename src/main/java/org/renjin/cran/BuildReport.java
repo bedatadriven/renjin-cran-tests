@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.base.Charsets;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.renjin.cran.PackageDescription.PackageDependency;
 
@@ -42,6 +43,7 @@ public class BuildReport {
   public Collection<PackageReport> getPackages() {
     return packages.values();
   }
+  
 
   
   public void writeReports() throws IOException, TemplateException {
@@ -137,11 +139,7 @@ public class BuildReport {
     
     public void writeHtml(Configuration cfg) throws IOException, TemplateException {
       System.out.println("Writing report for " + pkg);
-      
-      if(getWasBuilt() && pkg.getLogFile().exists()) {
-        Files.copy(pkg.getLogFile(), new File(packageReportsDir, getLogFileName()));
-      }
-      
+
       FileWriter index = new FileWriter(new File(packageReportsDir, pkg.getName() + ".html"));
       
       Template template = cfg.getTemplate("package.ftl");
@@ -174,6 +172,28 @@ public class BuildReport {
       }
     }
 
+    public List<TestResult> getTestResults() throws IOException {
+      List<TestResult> results = Lists.newArrayList();
+      File targetDir = new File(pkg.getBaseDir(), "target");
+      File testReportDir = new File(targetDir, "renjin-test-reports");
+      if(testReportDir.exists() && testReportDir.listFiles() != null) {
+        for(File file : testReportDir.listFiles()) {
+          if(file.getName().endsWith(".xml")) {
+            results.add(new TestResult(file));
+          }
+        }
+      }
+      return results;
+    }
+
+    public String getBuildOutput() throws IOException {
+      if(getWasBuilt() && pkg.getLogFile().exists()) {
+        return Files.toString(pkg.getLogFile(), Charsets.UTF_8);
+      } else {
+        return "\n";
+      }
+    }
+    
     private String getLogFileName() {
       return pkg.getName() + ".log.txt";
     }
