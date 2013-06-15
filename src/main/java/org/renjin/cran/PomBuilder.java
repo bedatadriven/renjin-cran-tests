@@ -145,7 +145,7 @@ public class PomBuilder {
 
     Xpp3Dom defaultPackages = new Xpp3Dom("defaultPackages");
     for(String defaultPackage : new String[] {
-        "methods" , "stats", "utils", "grDevices", "graphics" }) {
+        "methods" , "stats", "utils", "grDevices", "graphics", "datasets" }) {
       Xpp3Dom pkg = new Xpp3Dom("package");
       pkg.setValue(defaultPackage);
       defaultPackages.addChild(pkg);
