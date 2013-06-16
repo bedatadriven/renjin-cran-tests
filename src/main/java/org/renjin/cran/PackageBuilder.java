@@ -9,14 +9,23 @@ import java.util.concurrent.Callable;
 public class PackageBuilder implements Callable<BuildResult> {
   
   private PackageNode pkg;
-  private boolean updateSnapshots;
   private File logFile;
+
+
+  /**
+   * When this is true, we force maven to check for snapshot
+   * updates. This is important during the first few builds to make
+   * sure that we have the latest version of renjin.
+   *
+   * <p>After the first few builds succeed, {@link Builder} sets this
+   * flag to false</p>
+   */
+  public static boolean updateSnapshots = true;
 
   public static final long TIMEOUT_SECONDS = 10 * 60;
 
-  public PackageBuilder(PackageNode pkg, boolean updateSnapshots) {
+  public PackageBuilder(PackageNode pkg) {
     this.pkg = pkg;
-    this.updateSnapshots = updateSnapshots;
     this.logFile = new File(pkg.getBaseDir(), "build.log");
   }
 

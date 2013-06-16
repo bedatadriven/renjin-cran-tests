@@ -166,6 +166,12 @@ public class Builder {
       if(result.getOutcome() == BuildOutcome.SUCCESS) {
         built.add(completed);
 
+        // Once a few builds have succeeded, we don't have
+        // to force maven to look for the latest snapshots
+        if(built.size() > (getThreadPoolSize()*2)) {
+          PackageBuilder.updateSnapshots = false;
+        }
+
       } else if(result.getOutcome() == BuildOutcome.ERROR ||
                 result.getOutcome() == BuildOutcome.TIMEOUT) {
         // otherwise reschedule a few times
@@ -206,9 +212,9 @@ public class Builder {
     // for the first few packages, force checking for snapshots so we get
     // the latest versions, after that we should have the latest copies
     // in the local repository
-    boolean updateSnapshots = (built.size() < 10);
+    boolean updateSnapshots = (scheduled.size() < (getThreadPoolSize()*3));
 
-    this.service.submit(new PackageBuilder(pkg, updateSnapshots));
+    this.service.submit(new PackageBuilder(pkg));
     scheduled.add(pkg);
   }
 
