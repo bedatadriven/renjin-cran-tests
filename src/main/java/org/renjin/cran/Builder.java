@@ -165,7 +165,9 @@ public class Builder {
       // are now available as dependencies
       if(result.getOutcome() == BuildOutcome.SUCCESS) {
         built.add(completed);
-      } else {
+
+      } else if(result.getOutcome() == BuildOutcome.ERROR ||
+                result.getOutcome() == BuildOutcome.TIMEOUT) {
         // otherwise reschedule a few times
         // it's possible to encounter OutOfMemory Errors
         Integer retries = retryCount.get(result.getPackageName());
@@ -186,7 +188,7 @@ public class Builder {
       
     }
     
-    // close down the threadpool
+    // close down the thread pool so that the process can exit
     executor.shutdown();
     
     System.out.println("Build complete; " + toBuild.size() + " package(s) with unmet dependencies");

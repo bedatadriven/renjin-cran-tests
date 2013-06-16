@@ -12,7 +12,7 @@ public class PackageBuilder implements Callable<BuildResult> {
   private boolean updateSnapshots;
   private File logFile;
 
-  public static final long TIMEOUT_SECONDS = 5 * 60;
+  public static final long TIMEOUT_SECONDS = 10 * 60;
 
   public PackageBuilder(PackageNode pkg, boolean updateSnapshots) {
     this.pkg = pkg;
@@ -75,6 +75,8 @@ public class PackageBuilder implements Callable<BuildResult> {
       if(result.getOutcome() != BuildOutcome.TIMEOUT) {
         if(monitor.getExitCode() == 0) {
           result.setOutcome(BuildOutcome.SUCCESS);
+        } else if(monitor.getExitCode() == 1) {
+          result.setOutcome(BuildOutcome.FAILED);
         } else {
           System.out.println(pkg.getName() + " exited with code " + monitor.getExitCode());
           result.setOutcome(BuildOutcome.ERROR);
