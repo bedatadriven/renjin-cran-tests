@@ -33,6 +33,8 @@
 
   <p>${description.description}</p>
 
+  <h2>Dependency Information</h2>
+  
   <h2>Languages</h2>
   <table class="table" style="width: auto">
   	<thead>

@@ -4,8 +4,7 @@ public class BuildResult {
 
   private String packageName;
   private BuildOutcome outcome;
- 
-  
+
   public BuildResult() {
     
   }

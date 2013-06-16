@@ -1,20 +1,24 @@
 package org.renjin.cran;
 
+import com.google.common.collect.Lists;
+
 import java.io.File;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 public class PackageBuilder implements Callable<BuildResult> {
   
   private PackageNode pkg;
+  private boolean updateSnapshots;
   private File logFile;
 
   public static final long TIMEOUT_SECONDS = 5 * 60;
-  
-  public PackageBuilder(PackageNode pkg) {
+
+  public PackageBuilder(PackageNode pkg, boolean updateSnapshots) {
     this.pkg = pkg;
+    this.updateSnapshots = updateSnapshots;
     this.logFile = new File(pkg.getBaseDir(), "build.log");
   }
-  
 
   @Override
   public BuildResult call() throws Exception {
@@ -28,12 +32,19 @@ public class PackageBuilder implements Callable<BuildResult> {
     
     BuildResult result = new BuildResult();
     result.setPackageName(pkg.getName());
-    
-    ProcessBuilder builder = new ProcessBuilder(getMavenPath(), 
-        "-Dmaven.test.failure.ignore=true",
-        "-DenvClassifier=linux-x86_64",
-        "-Dignore.legacy.compilation.failure=true",
-        "clean", "install");
+
+    List<String> command = Lists.newArrayList();
+    command.add(getMavenPath());
+    if(updateSnapshots) {
+      command.add("-U");
+    }
+    command.add("-Dmaven.test.failure.ignore=true");
+    command.add("-DenvClassifier=linux-x86_64");
+    command.add("-Dignore.legacy.compilation.failure=true");
+    command.add("clean");
+    command.add("install");
+
+    ProcessBuilder builder = new ProcessBuilder(command);
     
     builder.directory(pkg.getBaseDir());
     builder.redirectErrorStream(true);
@@ -64,7 +75,8 @@ public class PackageBuilder implements Callable<BuildResult> {
       if(result.getOutcome() != BuildOutcome.TIMEOUT) {
         if(monitor.getExitCode() == 0) {
           result.setOutcome(BuildOutcome.SUCCESS);
-        } else { 
+        } else {
+          System.out.println(pkg.getName() + " exited with code " + monitor.getExitCode());
           result.setOutcome(BuildOutcome.ERROR);
         }
       }

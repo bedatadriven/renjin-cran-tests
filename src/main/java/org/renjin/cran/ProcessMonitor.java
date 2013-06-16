@@ -17,6 +17,7 @@ public class ProcessMonitor extends Thread {
     try {
       exitCode = process.waitFor();
     } catch (InterruptedException e) {
+      System.out.println("ProcessMonitor received interrupt");
     }
     finished = true;
   }

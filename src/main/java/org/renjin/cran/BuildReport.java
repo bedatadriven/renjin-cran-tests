@@ -174,12 +174,14 @@ public class BuildReport {
 
     public List<TestResult> getTestResults() throws IOException {
       List<TestResult> results = Lists.newArrayList();
-      File targetDir = new File(pkg.getBaseDir(), "target");
-      File testReportDir = new File(targetDir, "renjin-test-reports");
-      if(testReportDir.exists() && testReportDir.listFiles() != null) {
-        for(File file : testReportDir.listFiles()) {
-          if(file.getName().endsWith(".xml")) {
-            results.add(new TestResult(file));
+      if(getWasBuilt()) {
+        File targetDir = new File(pkg.getBaseDir(), "target");
+        File testReportDir = new File(targetDir, "renjin-test-reports");
+        if(testReportDir.exists() && testReportDir.listFiles() != null) {
+          for(File file : testReportDir.listFiles()) {
+            if(file.getName().endsWith(".xml")) {
+              results.add(new TestResult(file));
+            }
           }
         }
       }

@@ -42,10 +42,12 @@ public class Builder {
    * Set of all projects that have been successfully built.
    */
   private Set<PackageNode> built = Sets.newHashSet();
-  
-  
+
   private int maxNumberToBuild = Integer.MAX_VALUE;
- 
+
+  private Map<String, Integer> retryCount = Maps.newHashMap();
+  private ExecutorCompletionService<BuildResult> service;
+
   public static void main(String[] args) throws Exception {
 
     Builder builder = new Builder();
@@ -124,7 +126,9 @@ public class Builder {
     
     toBuild = Lists.newArrayList(nodes.values());
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getThreadPoolSize());
-    ExecutorCompletionService<BuildResult> service = new ExecutorCompletionService<BuildResult>(executor);
+    service = new ExecutorCompletionService<BuildResult>(executor);
+
+    System.out.println("Thread pool created with " + getThreadPoolSize() + " threads");
 
     int scheduledCount = 0;
     
@@ -135,9 +139,8 @@ public class Builder {
       while(it.hasNext()) {
         PackageNode pkg = it.next();
         if(dependenciesAreResolved(pkg) && scheduledCount < maxNumberToBuild) {
-          System.out.println("Scheduling " + pkg + "...");
-          service.submit(new PackageBuilder(pkg));
-          scheduled.add(pkg);
+          scheduleForBuild(pkg);
+
           scheduledCount ++;
           it.remove();
         }
@@ -162,6 +165,18 @@ public class Builder {
       // are now available as dependencies
       if(result.getOutcome() == BuildOutcome.SUCCESS) {
         built.add(completed);
+      } else {
+        // otherwise reschedule a few times
+        // it's possible to encounter OutOfMemory Errors
+        Integer retries = retryCount.get(result.getPackageName());
+        if(retries == null) {
+          retries = 0;
+        }
+        if(retries < 3) {
+          // reschedule
+          scheduleForBuild(nodes.get(result.getPackageName()));
+          retryCount.put(result.getPackageName(), retries+1);
+        }
       }
       
       // report status periodically
@@ -181,6 +196,18 @@ public class Builder {
     }
     
     writeResults(new BuildResults(results));    
+  }
+
+  private void scheduleForBuild(PackageNode pkg) {
+    System.out.println("Scheduling " + pkg + "...");
+
+    // for the first few packages, force checking for snapshots so we get
+    // the latest versions, after that we should have the latest copies
+    // in the local repository
+    boolean updateSnapshots = (built.size() < 10);
+
+    this.service.submit(new PackageBuilder(pkg, updateSnapshots));
+    scheduled.add(pkg);
   }
 
   /**
