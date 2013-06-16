@@ -122,7 +122,7 @@ public class Builder {
     
     System.out.println("Starting build...");
 
-    List<BuildResult> results = Lists.newArrayList();
+    Map<String, BuildResult> results = Maps.newHashMap();
     
     toBuild = Lists.newArrayList(nodes.values());
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getThreadPoolSize());
@@ -157,7 +157,7 @@ public class Builder {
       PackageNode completed = nodes.get(result.getPackageName());
       scheduled.remove(completed);
 
-      results.add(result);
+      results.put(result.getPackageName(), result);
       
       System.out.println(result.getPackageName() + ": " + result.getOutcome());
       
@@ -194,10 +194,10 @@ public class Builder {
     System.out.println("Build complete; " + toBuild.size() + " package(s) with unmet dependencies");
     
     for(PackageNode node : toBuild) {
-      results.add(new BuildResult(node.getName(), BuildOutcome.NOT_BUILT));
+      results.put(node.getName(), new BuildResult(node.getName(), BuildOutcome.NOT_BUILT));
     }
     
-    writeResults(new BuildResults(results));    
+    writeResults(new BuildResults(Lists.newArrayList(results.values())));
   }
 
   private void scheduleForBuild(PackageNode pkg) {
