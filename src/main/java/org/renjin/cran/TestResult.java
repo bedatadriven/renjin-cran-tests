@@ -63,6 +63,10 @@ public class TestResult {
     return name;
   }
 
+  public BuildReport.PackageReport getPackage() {
+    return pkg;
+  }
+
   public String parseError() {
     String[] lines = getOutput().split("\n");
     for(String line : lines) {

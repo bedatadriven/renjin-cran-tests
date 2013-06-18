@@ -16,9 +16,9 @@
 
     <#list failedTests as test>
         <tr>
-            <td>test.package.name</td>
-            <td>test.name</td>
-            <td>test.errorMessage</td>
+            <td>${test.package.name}</td>
+            <td>${test.name}</td>
+            <td>${test.errorMessage}</td>
         </tr>
     </#list>
   </table>
