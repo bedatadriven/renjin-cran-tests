@@ -1,6 +1,7 @@
 package org.renjin.cran;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 import org.renjin.cran.BuildReport.PackageReport;
@@ -12,7 +13,7 @@ public class BuildStatistics {
   private int totalTests;
   private int totalTestsPassed;
   
-  public BuildStatistics(List<BuildReport.PackageReport> reports) {
+  public BuildStatistics(Collection<PackageReport> reports) {
     for(PackageReport report : reports) {
       try {
         sumPackage(report);

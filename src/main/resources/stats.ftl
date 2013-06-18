@@ -13,12 +13,12 @@
   		<th>Count</th>
   	</thead>
   	<tr>
-  		<tr>Packages</tr>
-  		<tr>${totalPackages}</tr>
+  		<td>Packages</td>
+  		<td>${stats.totalPackages}</td>
   	</tr>
   	<tr>
-  		<tr>Packages built</tr>
-  		<tr>${totalPackagesBuilt}</tr>
+  		<td>Packages built</td>
+  		<td>${stats.totalPackagesBuilt}</td>
   	</tr>
   </table>
 
@@ -31,11 +31,11 @@
   	</thead>
   	<tr>
   		<td>Total Tests</td>
-  		<td>${totalTests}</td>
+  		<td>${stats.totalTests}</td>
   	</tr>
   	<tr>
   		<td>Tests Passing</td>
-  		<td>${totalTestsPassed}</td>
+  		<td>${stats.totalTestsPassed}</td>
   	</tr>
   </table>  
   </div>

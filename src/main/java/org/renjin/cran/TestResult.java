@@ -48,4 +48,14 @@ public class TestResult {
   public String getName() {
     return name;
   }
+
+  public String parseError() {
+    String[] lines = getOutput().split("\n");
+    for(String line : lines) {
+      if(line.startsWith("ERROR")) {
+        return line;
+      }
+    }
+    return null;
+  }
 }

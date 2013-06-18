@@ -25,19 +25,30 @@ public class BuildReport {
   private File reportDir;
   private File packageReportsDir;
   private Map<String, PackageReport> packages = Maps.newHashMap();
+  private final Configuration templateCfg;
+  private BuildStatistics stats;
 
   public BuildReport(File outputDir, File reportDir) throws Exception {
     
     this.reportDir = reportDir;
     this.packageReportsDir = new File(reportDir, "packages");
     this.packageReportsDir.mkdirs();
-    
+
+    // initialize template engine
+    templateCfg = new Configuration();
+    templateCfg.setClassForTemplateLoading(getClass(), "/");
+    templateCfg.setObjectWrapper(new DefaultObjectWrapper());
+
+    // read build results
     ObjectMapper mapper = new ObjectMapper();
     BuildResults results = mapper.readValue(new File(outputDir, "build.json"), BuildResults.class);
     for(BuildResult result : results.getResults()) {
       PackageNode node = new PackageNode(new File(outputDir, result.getPackageName()));
       packages.put(node.getName(), new PackageReport(node, result.getOutcome()));
     }
+    
+    // compile statistics
+    this.stats = new BuildStatistics(packages.values());
   }
   
   public Collection<PackageReport> getPackages() {
@@ -45,23 +56,29 @@ public class BuildReport {
   }
   
 
-  
   public void writeReports() throws IOException, TemplateException {
-    Configuration cfg = new Configuration();
-    cfg.setClassForTemplateLoading(getClass(), "/");
-    cfg.setObjectWrapper(new DefaultObjectWrapper());
 
-    Template template = cfg.getTemplate("index.ftl");  
-    
-    FileWriter writer = new FileWriter(new File(reportDir, "index.html"));
-    template.process(this, writer);
-    writer.close();
+
+    writeIndex("index");
+    writeIndex("stats");
   
     for(PackageReport pkg : packages.values()) {
-      pkg.writeHtml(cfg);
+      pkg.writeHtml();
     }
   }
-  
+
+  private void writeIndex(final String name) throws IOException, TemplateException {
+    Template template = templateCfg.getTemplate(name + ".ftl");
+
+    FileWriter writer = new FileWriter(new File(reportDir, name + ".html"));
+    template.process(this, writer);
+    writer.close();
+  }
+
+  public BuildStatistics getStats() {
+    return stats;
+  }
+
   public class PackageDep {
     private String name;
     private PackageReport report;
@@ -137,12 +154,12 @@ public class BuildReport {
       return reports;
     }
     
-    public void writeHtml(Configuration cfg) throws IOException, TemplateException {
+    public void writeHtml() throws IOException, TemplateException {
       System.out.println("Writing report for " + pkg);
 
       FileWriter index = new FileWriter(new File(packageReportsDir, pkg.getName() + ".html"));
       
-      Template template = cfg.getTemplate("package.ftl");
+      Template template = templateCfg.getTemplate("package.ftl");
       template.process(this, index);
       index.close();
     }
@@ -180,7 +197,10 @@ public class BuildReport {
         if(testReportDir.exists() && testReportDir.listFiles() != null) {
           for(File file : testReportDir.listFiles()) {
             if(file.getName().endsWith(".xml")) {
-              results.add(new TestResult(file));
+              TestResult testResult = new TestResult(file);
+              if(!testResult.getOutput().isEmpty()) {
+                results.add(testResult);
+              }
             }
           }
         }
