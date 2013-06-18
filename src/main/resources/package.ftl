@@ -84,7 +84,7 @@
 
   <#list testResults as test>
   <a name="test-${test.name}"></a>
-  <h3>${test.name}</h3>
+  <h3>${test.name} [<#if test.passed>OK<#else>ERROR</#if>] </h3>
   <pre>
 ${test.output?html}
   </pre>
