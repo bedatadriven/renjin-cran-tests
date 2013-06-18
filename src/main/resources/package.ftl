@@ -1,19 +1,30 @@
 <#include "base.ftl">
+
+<#macro deplabel d>
+<a href="${d.name}.html" class="label label-${d.className}">${d.name}</a>
+</#macro>
+
 <@scaffolding>
 
   <h1>${name} ${description.version}</h1>
 
   <p class="lead">${description.title}</p>
 
-
   <#if dependencies?has_content>
   <p>Dependencies:
-  <#list dependencies as dependency>
-  <a href="${dependency.name}.html" class="label label-${dependency.className}">${dependency.name}</a>
+  <#list dependencies as package>
+    <@deplabel d=package/>
   </#list>
   </p>
   </#if>
 
+  <#if downstream?has_content>
+  <p>Reverse depends:
+  <#list downstream as package>
+    <@deplabel d=package/>
+  </#list>
+  </p>
+  </#if>
 
   <#if outcome == "not_built">
   <div class="alert alert-error">This package was not built due to an unresolved dependency</div>
