@@ -1,18 +1,14 @@
 package org.renjin.cran;
 
 import java.io.*;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
+import com.google.common.collect.*;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.renjin.cran.PackageDescription.PackageDependency;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
 import freemarker.template.Configuration;
@@ -26,7 +22,11 @@ public class BuildReport {
   private File packageReportsDir;
   private Map<String, PackageReport> packages = Maps.newHashMap();
   private final Configuration templateCfg;
+
   private BuildStatistics stats;
+
+  private Multimap<PackageReport, PackageReport> downstream = HashMultimap.create();
+  private List<TestResult> failedTests = Lists.newArrayList();
 
   public BuildReport(File outputDir, File reportDir) throws Exception {
     
@@ -40,17 +40,50 @@ public class BuildReport {
     templateCfg.setObjectWrapper(new DefaultObjectWrapper());
 
     // read build results
+    System.out.println("Reading build results...");
     ObjectMapper mapper = new ObjectMapper();
     BuildResults results = mapper.readValue(new File(outputDir, "build.json"), BuildResults.class);
     for(BuildResult result : results.getResults()) {
       PackageNode node = new PackageNode(new File(outputDir, result.getPackageName()));
       packages.put(node.getName(), new PackageReport(node, result.getOutcome()));
     }
+
+    // compute downstream counts
+    System.out.println("Computing downstream counts...");
+    for(PackageReport report : packages.values()) {
+      for(PackageDependency dep : report.getDescription().getDepends()) {
+        PackageReport depReport = packages.get(dep.getName());
+        if(depReport != null) {
+          downstream.put(depReport, report);
+        }
+      }
+    }
+    for(PackageReport report : packages.values()) {
+      report.computeDownstream();
+    }
+
+    // collating failed tests
+    collateFailedTests();
     
     // compile statistics
+    System.out.println("Compiling statistics...");
     this.stats = new BuildStatistics(packages.values());
+
+    System.out.println("Collating test errors...");
+    collateFailedTests();
   }
-  
+
+  private void collateFailedTests() throws IOException {
+
+    for(PackageReport report : packages.values()) {
+      for(TestResult test : report.getTestResults()) {
+        if(!test.isPassed() && !Strings.isNullOrEmpty(test.getErrorMessage())) {
+          failedTests.add(test);
+        }
+      }
+    }
+  }
+
   public Collection<PackageReport> getPackages() {
     return packages.values();
   }
@@ -58,9 +91,10 @@ public class BuildReport {
 
   public void writeReports() throws IOException, TemplateException {
 
-
     writeIndex("index");
+    writeIndex("index-blockers");
     writeIndex("stats");
+    writeIndex("errors");
   
     for(PackageReport pkg : packages.values()) {
       pkg.writeHtml();
@@ -77,6 +111,11 @@ public class BuildReport {
 
   public BuildStatistics getStats() {
     return stats;
+  }
+
+
+  public List<TestResult> getFailedTests() {
+    return failedTests;
   }
 
   public class PackageDep {
@@ -98,15 +137,7 @@ public class BuildReport {
       } else if(report == null) {
         return "inverse";
       } else {
-        switch(report.outcome) {
-        case ERROR:
-        case TIMEOUT:
-          return "important";
-        case SUCCESS:
-          return "success";
-        default:
-          return "";
-        }
+        return report.getClassName();
       }
     }
   }
@@ -120,12 +151,16 @@ public class BuildReport {
     
     private boolean legacyCompilationFailed = false;
     private boolean testsFailed = false;
-    
+
+    private int downstreamCount;
+    private final List<TestResult> tests = Lists.newArrayList();
+
     public PackageReport(PackageNode pkg, BuildOutcome outcome) throws IOException {
       this.pkg = pkg;
       this.outcome = outcome;
 
       parseBuildLog();
+      parseTestResults();
     }
     
     private void parseBuildLog() throws IOException {
@@ -142,7 +177,36 @@ public class BuildReport {
         }
       }
     }
-    
+
+    private void parseTestResults() throws IOException {
+      if(getWasBuilt()) {
+        File targetDir = new File(pkg.getBaseDir(), "target");
+        File testReportDir = new File(targetDir, "renjin-test-reports");
+        if(testReportDir.exists() && testReportDir.listFiles() != null) {
+          for(File file : testReportDir.listFiles()) {
+            if(file.getName().endsWith(".xml")) {
+              TestResult testResult = new TestResult(this, file);
+              if(!testResult.getOutput().isEmpty()) {
+                tests.add(testResult);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    public String getClassName() {
+      switch(outcome) {
+        case ERROR:
+        case TIMEOUT:
+          return "important";
+        case SUCCESS:
+          return "success";
+        default:
+          return "";
+      }
+    }
+
     public List<PackageDep> getDependencies() {
       List<PackageDep> reports = Lists.newArrayList();
       for(PackageDependency dep : pkg.getDescription().getDepends()) {
@@ -152,6 +216,10 @@ public class BuildReport {
         }
       }
       return reports;
+    }
+
+    public Collection<PackageReport> getDownstream() {
+      return downstream.get(this);
     }
     
     public void writeHtml() throws IOException, TemplateException {
@@ -190,22 +258,7 @@ public class BuildReport {
     }
 
     public List<TestResult> getTestResults() throws IOException {
-      List<TestResult> results = Lists.newArrayList();
-      if(getWasBuilt()) {
-        File targetDir = new File(pkg.getBaseDir(), "target");
-        File testReportDir = new File(targetDir, "renjin-test-reports");
-        if(testReportDir.exists() && testReportDir.listFiles() != null) {
-          for(File file : testReportDir.listFiles()) {
-            if(file.getName().endsWith(".xml")) {
-              TestResult testResult = new TestResult(file);
-              if(!testResult.getOutput().isEmpty()) {
-                results.add(testResult);
-              }
-            }
-          }
-        }
-      }
-      return results;
+      return tests;
     }
 
     public String getBuildOutput() throws IOException {
@@ -253,15 +306,34 @@ public class BuildReport {
       }
       return loc;
     }
-    
+
+    public int getDownstreamCount() {
+      return downstreamCount;
+    }
+
     public Set<String> getNativeLanguages() throws IOException {
       Set<String> langs = Sets.newHashSet(getLinesOfCode().keySet());
       langs.remove("R");
       return langs;
     }
+
+    public void computeDownstream() {
+      Queue<PackageReport> q = Lists.newLinkedList();
+      Set<PackageReport> visited = Sets.newHashSet();
+      q.add(this);
+      while(!q.isEmpty()) {
+        PackageReport t = q.poll();
+        for(PackageReport u : downstream.get(t)) {
+          downstreamCount++;
+          if(!visited.contains(u)) {
+            visited.add(u);
+            q.add(u);
+          }
+        }
+      }
+    }
   }
-  
-  
+
   public static void main(String[] args) throws Exception {
     BuildReport report = new BuildReport(
         new File(System.getProperty("cran.dir")), 

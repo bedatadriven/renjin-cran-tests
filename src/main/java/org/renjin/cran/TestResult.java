@@ -8,7 +8,9 @@ import java.io.IOException;
 
 
 public class TestResult {
-  
+
+  private final BuildReport.PackageReport pkg;
+  private final String errorMessage;
   private boolean passed;
   private String output;
   private String name;
@@ -18,7 +20,9 @@ public class TestResult {
    * @param xmlFile the junit-style XML file describing the test outcome.
    *               
    */
-  public TestResult(File xmlFile) throws IOException {
+  public TestResult(BuildReport.PackageReport pkg, File xmlFile) throws IOException {
+    this.pkg = pkg;
+
     if(!xmlFile.getName().startsWith("TEST-") || !xmlFile.getName().endsWith(".xml")) {
       throw new IllegalArgumentException("Expected XML file named TEST-testname.xml");
     }
@@ -35,6 +39,16 @@ public class TestResult {
     // read the the output from the txt file
     File outputFile = new File(xmlFile.getParentFile(), name + "-output.txt");
     this.output = Files.toString(outputFile, Charsets.UTF_8);
+
+    if(!this.passed) {
+      this.errorMessage = parseError();
+    } else {
+      this.errorMessage = null;
+    }
+  }
+
+  public String getErrorMessage() {
+    return errorMessage;
   }
 
   public boolean isPassed() {
@@ -47,6 +61,10 @@ public class TestResult {
 
   public String getName() {
     return name;
+  }
+
+  public BuildReport.PackageReport getPackage() {
+    return pkg;
   }
 
   public String parseError() {

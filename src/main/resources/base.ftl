@@ -16,6 +16,16 @@
       }
     </style>
     <link href="/css/bootstrap-responsive.css" rel="stylesheet">
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-20543588-4', 'renjin.org');
+      ga('send', 'pageview');
+
+    </script>
 
     <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
     <!--[if lt IE 9]>
@@ -33,12 +43,26 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="/index.html">Renjin CRAN Builds</a>
           <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li class="active"><a href="/index.html">List</a></li>
-              
-            </ul>
+               <ul class="nav">
+                  <li><a href="http://www.renjin.org/">Home</a></li>
+                  <li><a href="http://www.renjin.org/#about">About</a></li>
+                  <li><a href="http://www.renjin.org/#downloads">Downloads</a></li>
+                  <li><a href="http://www.renjin.org/blog/">Blog</a></li>
+                  <li><a href="http://packages.renjin.org/index.html">Packages</a></li>
+                  <li><a href="http://www.renjin.org/support.html">Support</a></li>
+                  <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-target="#" data-toggle="dropdown">Documentation <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                      <li><a href="http://www.renjin.org/documentation/">Overview</a></li>
+                      <li class="divider"></li>
+                      <li class="nav-header">Guides for...</li>
+                      <li><a href="http://www.renjin.org/documentation/analyst-guide.html">Analysts</a></li>
+                      <li><a href="http://www.renjin.org/documentation/developer-guide.html">Developers</a></li>
+                      <li><a href="http://www.renjin.org/documentation/contributor-guide.html">Contributors</a></li>
+                    </ul>
+                  </li>
+                </ul>
           </div><!--/.nav-collapse -->
         </div>
       </div>
