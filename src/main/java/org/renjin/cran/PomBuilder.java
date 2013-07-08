@@ -6,14 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Set;
 
-import org.apache.maven.model.Build;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.model.Developer;
-import org.apache.maven.model.License;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.Parent;
-import org.apache.maven.model.Plugin;
-import org.apache.maven.model.PluginExecution;
+import org.apache.maven.model.*;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.renjin.cran.PackageDescription.PackageDependency;
@@ -28,7 +21,7 @@ import com.google.common.collect.Sets;
  *
  */
 public class PomBuilder {
-  private static final String RENJIN_VERSION = "0.7.0-SNAPSHOT";
+  private static final String RENJIN_VERSION = "0.7.0-RC3-SNAPSHOT";
 
   private File baseDir;
 
@@ -50,11 +43,11 @@ public class PomBuilder {
     model.setDescription(description.getDescription());
     model.setUrl(description.getUrl());
     
-    Parent parent = new Parent();
-    parent.setGroupId("org.renjin.cran");
-    parent.setArtifactId("cran-parent");
-    parent.setVersion("0.7.0-SNAPSHOT");
-    model.setParent(parent);
+//    Parent parent = new Parent();
+//    parent.setGroupId("org.renjin.cran");
+//    parent.setArtifactId("cran-parent");
+//    parent.setVersion("0.7.0-SNAPSHOT");
+//    model.setParent(parent);
     
     if(!Strings.isNullOrEmpty(description.getLicense())) {
       License license = new License();
@@ -90,7 +83,16 @@ public class PomBuilder {
     
     Build build = new Build();
     build.addPlugin(renjinPlugin);
-    
+
+    DeploymentRepository snapshotDeploymentRepository = new DeploymentRepository();
+    snapshotDeploymentRepository.setId("renjin-cran-repo");
+    snapshotDeploymentRepository.setUrl("http://nexus.bedatadriven.com/content/repositories/renjin-cran-0.7.0/");
+    snapshotDeploymentRepository.setName("Renjin CRAN Builds");
+
+    DistributionManagement distributionManagement = new DistributionManagement();
+    distributionManagement.setSnapshotRepository(snapshotDeploymentRepository);
+
+    model.setDistributionManagement(distributionManagement);
     model.setBuild(build);
 
     
@@ -118,8 +120,8 @@ public class PomBuilder {
 
   private PluginExecution legacyCompileExecution() {
     PluginExecution compileExecution = new PluginExecution();
-    compileExecution.setId("legacy-compile");
-    compileExecution.addGoal("legacy-sources-compile");
+    compileExecution.setId("gnur-compile");
+    compileExecution.addGoal("gnur-sources-compile");
 
     Xpp3Dom sourceDirectory = new Xpp3Dom("sourceDirectory");
     sourceDirectory.setValue("${basedir}/src");
