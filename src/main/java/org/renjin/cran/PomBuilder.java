@@ -28,10 +28,9 @@ import com.google.common.collect.Sets;
  *
  */
 public class PomBuilder {
-  private static final String RENJIN_VERSION = "0.7.0-SNAPSHOT";
+  private static final String RENJIN_VERSION = "0.7.0-RC3-SNAPSHOT";
 
   private File baseDir;
-
 
   private boolean successful = true;
   private final PackageDescription description;
@@ -118,8 +117,8 @@ public class PomBuilder {
 
   private PluginExecution legacyCompileExecution() {
     PluginExecution compileExecution = new PluginExecution();
-    compileExecution.setId("legacy-compile");
-    compileExecution.addGoal("legacy-sources-compile");
+    compileExecution.setId("gnur-compile");
+    compileExecution.addGoal("gnur-sources-compile");
 
     Xpp3Dom sourceDirectory = new Xpp3Dom("sourceDirectory");
     sourceDirectory.setValue("${basedir}/src");

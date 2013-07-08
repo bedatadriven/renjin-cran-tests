@@ -1,8 +1,10 @@
 package org.renjin.cran;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.Closeables;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -49,9 +51,9 @@ public class PackageBuilder implements Callable<BuildResult> {
     }
     command.add("-Dmaven.test.failure.ignore=true");
     command.add("-DenvClassifier=linux-x86_64");
-    command.add("-Dignore.legacy.compilation.failure=true");
+    command.add("-Dignore.gnur.compilation.failure=true");
     command.add("clean");
-    command.add("install");
+    command.add("deploy");
 
     ProcessBuilder builder = new ProcessBuilder(command);
     
@@ -60,36 +62,41 @@ public class PackageBuilder implements Callable<BuildResult> {
     try {
       long startTime = System.currentTimeMillis();
       Process process = builder.start();
-      
-      OutputCollector collector = new OutputCollector(process.getInputStream(), logFile);
+
+      InputStream processOutput = process.getInputStream();
+      OutputCollector collector = new OutputCollector(processOutput, logFile);
       collector.setName(pkg + " - output collector");
       collector.start();
-      
-      ProcessMonitor monitor = new ProcessMonitor(process);
-      monitor.setName(pkg + " - monitor");
-      monitor.start();
-      
-      while(!monitor.isFinished()) {
-       
-        if(System.currentTimeMillis() > (startTime + TIMEOUT_SECONDS * 1000)) {
-          System.out.println(pkg + " build timed out after " + TIMEOUT_SECONDS + " seconds.");
-          process.destroy();
-          result.setOutcome(BuildOutcome.TIMEOUT);
-          break;
+
+      try {
+        ProcessMonitor monitor = new ProcessMonitor(process);
+        monitor.setName(pkg + " - monitor");
+        monitor.start();
+
+        while(!monitor.isFinished()) {
+
+          if(System.currentTimeMillis() > (startTime + TIMEOUT_SECONDS * 1000)) {
+            System.out.println(pkg + " build timed out after " + TIMEOUT_SECONDS + " seconds.");
+            process.destroy();
+            result.setOutcome(BuildOutcome.TIMEOUT);
+            break;
+          }
+          Thread.sleep(1000);
         }
-        Thread.sleep(1000);
-      }
-           
-      collector.join();
-      if(result.getOutcome() != BuildOutcome.TIMEOUT) {
-        if(monitor.getExitCode() == 0) {
-          result.setOutcome(BuildOutcome.SUCCESS);
-        } else if(monitor.getExitCode() == 1) {
-          result.setOutcome(BuildOutcome.FAILED);
-        } else {
-          System.out.println(pkg.getName() + " exited with code " + monitor.getExitCode());
-          result.setOutcome(BuildOutcome.ERROR);
+
+        collector.join();
+        if(result.getOutcome() != BuildOutcome.TIMEOUT) {
+          if(monitor.getExitCode() == 0) {
+            result.setOutcome(BuildOutcome.SUCCESS);
+          } else if(monitor.getExitCode() == 1) {
+            result.setOutcome(BuildOutcome.FAILED);
+          } else {
+            System.out.println(pkg.getName() + " exited with code " + monitor.getExitCode());
+            result.setOutcome(BuildOutcome.ERROR);
+          }
         }
+      } finally {
+        Closeables.closeQuietly(processOutput);
       }
       
     } catch (Exception e) {

@@ -134,7 +134,7 @@ public class BuildReport {
         BufferedReader reader = new BufferedReader(new FileReader(logFile));
         String line;
         while((line=reader.readLine())!=null) {
-          if(line.contains("Compilation of legacy sources failed")) {
+          if(line.contains("Compilation of gnur sources failed")) {
             legacyCompilationFailed = true;
           } else if(line.contains("There were R test failures")) {
             testsFailed = true;
