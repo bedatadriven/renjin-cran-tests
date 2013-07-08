@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
+import com.google.common.collect.Lists;
 import org.apache.maven.model.*;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
@@ -91,10 +93,20 @@ public class PomBuilder {
     DistributionManagement distributionManagement = new DistributionManagement();
     distributionManagement.setSnapshotRepository(snapshotDeploymentRepository);
 
+    
+    Repository repository = new Repository();
+    repository.setId("bedatadriven-public");
+    repository.setUrl("http://nexus.bedatadriven.com/content/groups/public/");
+
     model.setDistributionManagement(distributionManagement);
     model.setBuild(build);
-
+    model.setRepositories(Lists.newArrayList(repository));
+    model.setPluginRepositories(Lists.newArrayList(repository));
     
+
+
+
+
     return model;
   }
 
