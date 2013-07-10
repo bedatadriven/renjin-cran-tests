@@ -35,14 +35,14 @@ public class OutputCollector extends Thread {
     try {
       InputStreamReader isr = new InputStreamReader(is);
       BufferedReader br = new BufferedReader(isr);
-      String line=null;
+      String line;
       while ( (line = br.readLine()) != null)
         out.println(line); 
     } catch (IOException ioe) {
       ioe.printStackTrace(out);
     } finally {
       Closeables.closeQuietly(out);
-    }
+   }
   }
   
 }
