@@ -46,10 +46,9 @@ public class PackageBuilder implements Callable<BuildResult> {
 
     List<String> command = Lists.newArrayList();
     command.add(getMavenPath());
-//    if(updateSnapshots) {
-//      command.add("-U");
-//    }
-    command.add("-o");
+    if(updateSnapshots) {
+      command.add("-U");
+    }
     // hot fix for tests that exceed memory
     if(pkg.getName().equals("MASS")) {
       command.add("-DskipTests");
@@ -59,8 +58,7 @@ public class PackageBuilder implements Callable<BuildResult> {
     command.add("-DenvClassifier=linux-x86_64");
     command.add("-Dignore.gnur.compilation.failure=true");
     command.add("clean");
-    command.add("install");
-//    command.add("deploy");
+    command.add("deploy");
 
     ProcessBuilder builder = new ProcessBuilder(command);
     
