@@ -23,7 +23,7 @@ import com.google.common.collect.Sets;
  *
  */
 public class PomBuilder {
-  private static final String RENJIN_VERSION = "0.7.0-RC4";
+  private static final String RENJIN_VERSION = "0.7.0-RC5";
 
   private File baseDir;
 
