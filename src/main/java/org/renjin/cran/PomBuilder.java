@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import org.apache.maven.model.*;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
@@ -18,12 +19,12 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 
 /**
- * Constructs a Maven Projct Object Model (POM) from a GNU-R style
+ * Constructs a Maven Project Object Model (POM) from a GNU-R style
  * package folder and DESCRIPTION file.
  *
  */
 public class PomBuilder {
-  private static final String RENJIN_VERSION = "0.7.0-RC3-SNAPSHOT";
+  private static final String RENJIN_VERSION = "0.7.0-RC7-SNAPSHOT";
 
   private File baseDir;
 
@@ -66,7 +67,11 @@ public class PomBuilder {
     addCoreModule(model, "graphics");
     addCoreModule(model, "methods");
     
-    for(PackageDependency packageDep : description.getDepends()) {
+    Set<PackageDependency> packageDependencies = Sets.newHashSet();
+    Iterables.addAll(packageDependencies, description.getDepends());
+    Iterables.addAll(packageDependencies, description.getImports());
+    
+    for(PackageDependency packageDep : packageDependencies) {
       if(!packageDep.getName().equals("R")) {
         model.addDependency(toMavenDependency(packageDep.getName()));
       }
@@ -102,10 +107,6 @@ public class PomBuilder {
     model.setBuild(build);
     model.setRepositories(Lists.newArrayList(repository));
     model.setPluginRepositories(Lists.newArrayList(repository));
-    
-
-
-
 
     return model;
   }
