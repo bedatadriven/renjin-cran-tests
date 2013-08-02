@@ -47,7 +47,7 @@ public class PackageBuilder implements Callable<BuildResult> {
     List<String> command = Lists.newArrayList();
     command.add(getMavenPath());
     if(updateSnapshots) {
-      command.add("-U");
+    //  command.add("-U");
     }
     // hot fix for tests that exceed memory
     if(pkg.getName().equals("MASS")) {

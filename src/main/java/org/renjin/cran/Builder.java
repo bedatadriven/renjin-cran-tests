@@ -105,6 +105,7 @@ public class Builder {
       if(dir.isDirectory() && !dir.getName().equals("00buildlogs")) {
         try {
           PackageNode node = new PackageNode(dir);
+          node.writePom();
           nodes.put(node.getName(), node);
         } catch(Exception e) {
           System.err.println("Error building POM for " + dir.getName());
