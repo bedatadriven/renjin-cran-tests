@@ -24,7 +24,7 @@ public class PackageBuilder implements Callable<BuildResult> {
    */
   public static boolean updateSnapshots = true;
 
-  public static final long TIMEOUT_SECONDS = 10 * 60;
+  public static final long TIMEOUT_SECONDS = 20 * 60;
 
   public PackageBuilder(PackageNode pkg) {
     this.pkg = pkg;
@@ -49,7 +49,12 @@ public class PackageBuilder implements Callable<BuildResult> {
     if(updateSnapshots) {
       command.add("-U");
     }
-    command.add("-Dmaven.test.failure.ignore=true");
+    // hot fix for tests that exceed memory
+    if(pkg.getName().equals("MASS")) {
+      command.add("-DskipTests");
+    } else {
+      command.add("-Dmaven.test.failure.ignore=true");
+    }
     command.add("-DenvClassifier=linux-x86_64");
     command.add("-Dignore.gnur.compilation.failure=true");
     command.add("clean");

@@ -225,6 +225,11 @@ public class BuildReport {
     public void writeHtml() throws IOException, TemplateException {
       System.out.println("Writing report for " + pkg);
 
+      if(pkg.getName().equals("DIME")) {
+        System.out.println("Skipping...");
+        return;
+      }
+
       FileWriter index = new FileWriter(new File(packageReportsDir, pkg.getName() + ".html"));
       
       Template template = templateCfg.getTemplate("package.ftl");
@@ -263,7 +268,11 @@ public class BuildReport {
 
     public String getBuildOutput() throws IOException {
       if(getWasBuilt() && pkg.getLogFile().exists()) {
-        return Files.toString(pkg.getLogFile(), Charsets.UTF_8);
+        try {
+          return Files.toString(pkg.getLogFile(), Charsets.UTF_8);
+        } catch(Exception e) {
+          return "Exception loading build output: " + e.getMessage();
+        }
       } else {
         return "\n";
       }
